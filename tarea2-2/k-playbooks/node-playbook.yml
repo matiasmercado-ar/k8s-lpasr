@@ -1,0 +1,119 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Install packages that allow apt to be used over HTTPS
+      apt:
+        name: [apt-transport-https, ca-certificates, curl, gnupg-agent, software-properties-common]
+        state: present
+        update_cache: yes
+
+    - name: Add Docker signing key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add apt repository for Docker
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker and containerd
+      apt:
+        name:
+          - containerd.io
+          - docker-ce
+          - docker-ce-cli
+        state: present
+        update_cache: yes
+
+    - name: Add vagrant to docker group
+      user:
+        name: vagrant
+        group: docker
+
+    - name: Remove swapfile from /etc/fstab
+      mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      with_items:
+        - swap
+        - none
+
+    - name: Disable swap
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+
+    - name: Ensure /etc/apt/keyrings directory exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Kubernetes Release GPG key
+      get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+        dest: /tmp/kubernetes-release.key
+        mode: '0644'
+
+    - name: Convert Kubernetes GPG key to .gpg format
+      command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release.key
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add Kubernetes apt repository
+      copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Kubernetes components
+      apt:
+        name:
+          - kubeadm
+          - kubectl
+          - kubelet
+          - vim
+        state: present
+
+###
+    - name: Generate default containerd config
+      shell: containerd config default > /etc/containerd/config.toml
+      args:
+        creates: /etc/containerd/config.toml
+
+    - name: Enable cri plugin in containerd config
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: '^disabled_plugins = \["cri"\]'
+        replace: '#disabled_plugins = ["cri"]'
+
+    - name: Restart containerd
+      service:
+        name: containerd
+        state: restarted
+        enabled: true
+
+    - name: Enable kebelet service
+      become: true
+      command: systemctl enable kubelet
+
+    - name: Copy join command
+      copy:
+        src: join-command
+        dest: /tmp/join-command.sh
+        mode: '0777'
+
+    - name: Join the node to the cluster
+      command: sh /tmp/join-command.sh
+
+  handlers:
+    - name: docker status
+      service:
+        name: docker
+        state: started
