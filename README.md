@@ -6,9 +6,9 @@ This repository contains a Kubernetes exercise for the academic year **2024–20
 ## 📚 Context
 
 Practical configuration and deployment of a Kubernetes cluster using tools like:
+- Kubernetes
 - Vagrant
 - Ansible
-- kubeadm
 - Calico for networking
 
 ## 🛠️ Requirements
@@ -16,7 +16,8 @@ Practical configuration and deployment of a Kubernetes cluster using tools like:
 - VirtualBox
 - Vagrant
 - Ansible
-- Linux-based system (or WSL2 on Windows)
+- Linux-based system
+- Troubleshooting ninja skills
 
 ## 🧑‍🎓 Author
 
