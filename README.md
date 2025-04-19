@@ -21,7 +21,7 @@ Practical configuration and deployment of a Kubernetes cluster using tools like:
 
 ## 🧑‍🎓 Author
 
-Updated version of this configuration: https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
+This is an updated version of this configuration from 2019: https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
 
 ---
 
