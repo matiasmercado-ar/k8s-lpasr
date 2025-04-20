@@ -11,9 +11,9 @@ if ! [[ "$NODE_COUNT" =~ ^[0-9]+$ ]]; then
 fi
 
 # Ask for CPU
-read -p "Enter the number of CPUs per VM (1-16): " V_CPU
-if ! [[ "$V_CPU" =~ ^[0-9]+$ ]] || [ "$V_CPU" -lt 1 ] || [ "$V_CPU" -gt 16 ]; then
-    echo "Error: CPU must be a number between 1 and 16."
+read -p "Enter the number of CPUs per VM (2-16): " V_CPU
+if ! [[ "$V_CPU" =~ ^[1-9]+$ ]] || [ "$V_CPU" -lt 2 ] || [ "$V_CPU" -gt 16 ]; then
+    echo "Error: CPU must be a number between 2 and 16."
     exit 1
 fi
 
