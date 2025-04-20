@@ -21,7 +21,7 @@ Practical configuration and deployment of a Kubernetes cluster using tools like:
 
 ## 🚀 Setup Instructions
 
-a. Clone this repository.
+a. Clone this repository: `git clone https://github.com/matiasmercado-ar/k8s-lpasr.git`
 
 b. Add execute permissions to the `vagrant-setup.sh` script by running: `chmod +x vagrant-setup.sh`
 
