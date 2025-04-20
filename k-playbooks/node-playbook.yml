@@ -73,10 +73,6 @@
       apt:
         update_cache: yes
 
-    - name: Trying to fix, update all package for compatibility
-      apt:
-        upgrade: dist
-
     - name: Install Kubernetes components
       apt:
         name:
