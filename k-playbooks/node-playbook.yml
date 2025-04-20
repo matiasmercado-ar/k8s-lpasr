@@ -31,6 +31,7 @@
       user:
         name: vagrant
         group: docker
+        append: yes
 
     - name: Remove swapfile from /etc/fstab
       mount:
@@ -72,6 +73,10 @@
       apt:
         update_cache: yes
 
+    - name: Trying to fix, update all package for compatibility
+      apt:
+        upgrade: dist
+
     - name: Install Kubernetes components
       apt:
         name:
@@ -81,7 +86,6 @@
           - vim
         state: present
 
-###
     - name: Generate default containerd config
       shell: containerd config default > /etc/containerd/config.toml
       args:
@@ -99,9 +103,24 @@
         state: restarted
         enabled: true
 
+### This just get the IP to use it on 2 other conf later
+
+    - name: Set the IP of the netcard enp0s8
+      ansible.builtin.shell: ip -o -4 addr show enp0s8 | awk '{print $4}' | cut -d/ -f1
+      register: enp0s8_ip
+      changed_when: false
+
     - name: Enable kebelet service
       become: true
       command: systemctl enable kubelet
+
+### Setting up the IP, if not, kubelet will take the next IP from the localhost (10.0.2.15 on my case)
+
+    - name: Set kubelet node IP
+      lineinfile:
+        path: /etc/default/kubelet
+        line: "KUBELET_EXTRA_ARGS=--node-ip={{ enp0s8_ip.stdout }}"
+        create: yes
 
     - name: Copy join command
       copy:
@@ -111,6 +130,22 @@
 
     - name: Join the node to the cluster
       command: sh /tmp/join-command.sh
+
+### Fix for Vagrant+VBox K8s. Try to run a command in a container without this is imposible
+### https://github.com/kubernetes/kubernetes/issues/63702#issuecomment-554277862
+
+    - name: Add KUBELET_EXTRA_ARGS to 10-kubeadm.conf
+      ansible.builtin.lineinfile:
+        path: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+        line: 'Environment="KUBELET_EXTRA_ARGS=--node-ip={{ enp0s8_ip.stdout }}"'
+        insertafter: EOF
+      when: enp0s8_ip.stdout != ""
+
+    - name: Reload systemd and restart kubelet
+      shell: |
+        systemctl daemon-reexec
+        systemctl daemon-reload
+        systemctl restart kubelet
 
   handlers:
     - name: docker status

@@ -32,6 +32,7 @@
       user:
         name: vagrant
         group: docker
+        append: yes
 
     - name: Remove swapfile from /etc/fstab
       mount:
@@ -80,13 +81,9 @@
           - kubectl
           - kubelet
           - vim
+          - net-tools
+          - etcd-client
         state: present
-
-    #- name: Generate containerd config with CRI v1alpha2
-    #  shell: |
-    #    containerd config default | sed 's/version = \"v1\"/version = \"v1alpha2\"/' > /etc/containerd/config.toml
-    #  args:
-    #    creates: /etc/containerd/config.toml
 
     - name: Generate default containerd config
       shell: containerd config default > /etc/containerd/config.toml
@@ -105,12 +102,36 @@
         state: restarted
         enabled: true
 
-    - name: Enable kebelet service
+    - name: Set the IP of the netcard enp0s8
+      ansible.builtin.shell: ip -o -4 addr show enp0s8 | awk '{print $4}' | cut -d/ -f1
+      register: enp0s8_ip
+      changed_when: false
+
+    - name: Enable kubelet service
       become: true
       command: systemctl enable kubelet
 
+    - name: Set kubelet node IP
+      lineinfile:
+        path: /etc/default/kubelet
+        line: "KUBELET_EXTRA_ARGS=--node-ip={{ enp0s8_ip.stdout }}"
+        create: yes
+
+    - name: Restart kubelet
+      systemd:
+        name: kubelet
+        state: restarted
+        daemon_reload: yes
+
+    - name: Ensure /var/lib/etcd is empty (if kubeadm is managing etcd)
+      file:
+        path: /var/lib/etcd
+        state: absent
+
     - name: Initialize the Kubernetes cluster
-      command: kubeadm init --apiserver-advertise-address=192.168.56.11 --apiserver-cert-extra-sans=192.168.56.11 --node-name controlplane --pod-network-cidr=192.168.0.0/16
+      command: kubeadm init --apiserver-advertise-address={{ enp0s8_ip.stdout }} --apiserver-cert-extra-sans={{ enp0s8_ip.stdout }} --node-name controlplane --pod-network-cidr=10.0.1.0/24
+      args:
+        creates: /etc/kubernetes/admin.conf
 
     - name: Setup kubeconfig for vagrant user
       shell: |
