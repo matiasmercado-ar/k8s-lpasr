@@ -19,13 +19,9 @@ Practical configuration and deployment of a Kubernetes cluster using tools like:
 - Linux-based system
 - Troubleshooting ninja skills
 
-## 🧑‍🎓 Author
-
-This is an updated version of this configuration from 2019: https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
-
 ## 🚀 Setup Instructions
 
-a. Clone this repository.
+a. Clone this repository: `git clone https://github.com/matiasmercado-ar/k8s-lpasr.git`
 
 b. Add execute permissions to the `vagrant-setup.sh` script by running: `chmod +x vagrant-setup.sh`
 
@@ -36,4 +32,8 @@ c. Run the Vagrant setup with: `./vagrant-setup.sh`
    - The amount of CPU and RAM resources needed for the nodes.
 
 d. After the setup, bring up the Vagrant environment by typing: `vagrant up`
+
+## 🧑‍🎓 Author
+
+This is an updated version of this configuration from 2019: https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
  
